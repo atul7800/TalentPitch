@@ -1,0 +1,19 @@
+{
+    "manifest_version": 3,
+    "name": "TalentPitch",
+    "version": "1.0",
+    "description": "Generate and send job application emails with ease.",
+    "permissions": ["storage", "identity"],
+    "host_permissions": ["https://mail.google.com/"],
+    "oauth2": {
+      "client_id": "254421465619-5dv5nka0fvt080clilbgaod4jltntmor.apps.googleusercontent.com",
+      "scopes": ["https://www.googleapis.com/auth/gmail.send"]
+    },
+    "action": {
+      "default_popup": "index.html"
+    },
+    "background": {
+      "service_worker": "background.js"
+    }
+  }
+  
