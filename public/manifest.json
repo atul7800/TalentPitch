@@ -1,19 +1,42 @@
 {
-    "manifest_version": 3,
-    "name": "TalentPitch",
-    "version": "1.0",
-    "description": "Generate and send job application emails with ease.",
-    "permissions": ["storage", "identity"],
-    "host_permissions": ["https://mail.google.com/"],
-    "oauth2": {
-      "client_id": "254421465619-5dv5nka0fvt080clilbgaod4jltntmor.apps.googleusercontent.com",
-      "scopes": ["https://www.googleapis.com/auth/gmail.send"]
-    },
-    "action": {
-      "default_popup": "index.html"
-    },
-    "background": {
-      "service_worker": "background.js"
+  "manifest_version": 3,
+  "name": "TalentPitch",
+  "version": "1.0",
+  "description": "Generate and send job application emails with ease.",
+  "permissions": [
+    "storage",
+    "identity",
+    "identity.email"
+  ],
+  "host_permissions": [
+    "https://mail.google.com/"
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://mail.google.com/*"
+    ]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pdf.worker.min.mjs"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
+  ],
+  "oauth2": {
+    "client_id": "876589810266-koc3lavbo585cjpnvtrm28lie9hg3i98.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.send"
+    ]
+  },
+  "action": {
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
   }
-  
+}
