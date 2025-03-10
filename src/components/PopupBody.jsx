@@ -5,7 +5,10 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faPaperclip, faCircleXmark} from "@fortawesome/free-solid-svg-icons";
 
 import * as pdfjsLib from "pdfjs-dist";
-pdfjsLib.GlobalWorkerOptions.workerSrc = "../../public/pdf.worker.min.mjs";
+// pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("workers/pdf.worker.min.mjs");
+pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(
+  "workers/pdf.worker.min.mjs"
+);
 
 const StyledTextArea = styled("textarea")({
   resize: "none",
@@ -39,7 +42,6 @@ function PopupBody() {
   useEffect(() => {
     sendTestMessage();
   }, []);
-
 
   useEffect(() => {
     if (resumeFile) {
@@ -88,15 +90,17 @@ function PopupBody() {
   };
 
   const generateEmails = async () => {
-    let resumeText;
-    if (resumeFile) {
-      resumeText = await extractTextFromPDF(resumeFile);
-    }
+    // let resumeText;
+    // if (resumeFile) {
+    //   resumeText = await extractTextFromPDF(resumeFile);
+    //   console.log("ResumeText : ", resumeText)
+    // }
 
-    //const prompt = `Resume:\n${resumeText}\nJob description: ${jobDescription}.\n\nGo through my resume and the job description and write a job application email for the above Job description withing 10 lines. Please hightlight my skills in bold, do not forget to add regards along wwith my email and mobile number (not in same line) and please do not use placeholders [] for replaceable value.`;
+    // const prompt = `Resume:\n${resumeText}\nJob description: ${jobDescription}.\n\nGo through my resume and the job description and write a job application email for the above Job description withing 10 lines. Please hightlight my skills in bold, do not forget to add regards along wwith my email and mobile number (not in same line) and please do not use placeholders [] for replaceable value.`;
     const prompt = `Job description: ${jobDescription}.\n\nGo through the job description and write a job application email withing 10 lines. Please hightlight my skills in bold, do not forget to add regards along wwith my email and mobile number (not in same line) and please do not use placeholders [] for replaceable value.`;
     const result = await GeminiChatSession.sendMessage(prompt);
     const generatedEmail = result.response.text();
+    console.log("Generated mail : ", generatedEmail);
     setGeneratedEmails((prevEmails) => [...prevEmails, generatedEmail]);
   };
 
