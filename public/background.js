@@ -2,32 +2,6 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log("Job Mailer Extension Installed.");
 });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log("📩 Received message:", request);
-
-  if (request.action === "testMessage") {
-    console.log("✅ Test message received from popup!");
-    sendResponse({success: true});
-  }
-
-  if (request.action === "sendEmail") {
-    console.log("📧 Sending email to:", request.to);
-
-    sendEmail(request.to, request.subject, request.body)
-      .then(() => {
-        console.log("✅ Email sent successfully!");
-        sendResponse({success: true});
-      })
-      .catch((error) => {
-        console.error("❌ Failed to send email:", error);
-        sendResponse({success: false, error: error.message});
-      });
-
-    return true; // Required for async response
-  }
-});
-
-
 // Function to get authentication token
 async function getAuthToken() {
   return new Promise((resolve, reject) => {

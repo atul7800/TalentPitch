@@ -3,11 +3,13 @@ import styled from "styled-components";
 import {GeminiChatSession} from "../services/GeminiAIModel";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faPaperclip, faCircleXmark} from "@fortawesome/free-solid-svg-icons";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
 
-import * as pdfjsLib from "pdfjs-dist";
-// pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("workers/pdf.worker.min.mjs");
+//for local
+//pdfjsLib.GlobalWorkerOptions.workerSrc = "/workers/pdf.worker.js";
+//for chrome extension
 pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(
-  "workers/pdf.worker.min.mjs"
+  "workers/pdf.worker.js"
 );
 
 const StyledTextArea = styled("textarea")({
@@ -32,57 +34,48 @@ function PopupBody() {
     generatedEmails.length > 0 ? "Send" : "Generate Email"
   );
 
-  const sendTestMessage = () => {
-    console.log("📩 Sending test message to background script...");
-    chrome.runtime.sendMessage({action: "testMessage"}, (response) => {
-      console.log("🛠️ Response from background:", response);
-    });
-  };
-
-  useEffect(() => {
-    sendTestMessage();
-  }, []);
-
   useEffect(() => {
     if (resumeFile) {
       setResumeName(resumeFile.name);
     } else {
       setResumeName("");
     }
-
-    if (generatedEmails.length > 0) {
-      console.log("generatedEmails : ", generatedEmails);
-    }
   }, [resumeFile, generatedEmails]);
 
   const extractTextFromPDF = async (file) => {
-    const reader = new FileReader();
     return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
       reader.onload = async () => {
         try {
-          console.log("📂 File loaded successfully.");
           const typedArray = new Uint8Array(reader.result);
-          console.log("📑 Converting file to PDF...");
-          const pdf = await pdfjsLib.getDocument(typedArray).promise;
-          console.log(`✅ PDF loaded with ${pdf.numPages} pages.`);
+          const loadingTask = pdfjsLib.getDocument({data: typedArray});
+          const pdf = await loadingTask.promise;
+
+          if (!pdf) {
+            return;
+          }
 
           let extractedText = "";
           for (let i = 1; i <= pdf.numPages; i++) {
-            console.log(`🔍 Processing page ${i}`);
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
-            const pageText = textContent.items.map((item) => item.str).join();
-            extractedText += pageText + "\n";
+
+            // Extract text from the page
+            const pageText = textContent.items
+              .map((item) => item.str)
+              .join(" ");
+            extractedText += `Page ${i}: ${pageText}\n\n`;
           }
-          console.log("✅ Successfully extracted text:", extractedText);
+
           resolve(extractedText);
         } catch (error) {
-          reject("Error processing the resume : ", error.message);
+          reject(new Error("Error processing the PDF: " + error.message));
         }
       };
 
-      reader.onerror = (error) => {
-        reject(new Error("Error reading the firesumee : ", error.message));
+      reader.onerror = () => {
+        reject(new Error("Error reading the PDF file."));
       };
 
       reader.readAsArrayBuffer(file);
@@ -90,17 +83,20 @@ function PopupBody() {
   };
 
   const generateEmails = async () => {
-    // let resumeText;
-    // if (resumeFile) {
-    //   resumeText = await extractTextFromPDF(resumeFile);
-    //   console.log("ResumeText : ", resumeText)
-    // }
+    let resumeText;
+    if (resumeFile) {
+      resumeText = await extractTextFromPDF(resumeFile);
+    }
 
-    // const prompt = `Resume:\n${resumeText}\nJob description: ${jobDescription}.\n\nGo through my resume and the job description and write a job application email for the above Job description withing 10 lines. Please hightlight my skills in bold, do not forget to add regards along wwith my email and mobile number (not in same line) and please do not use placeholders [] for replaceable value.`;
-    const prompt = `Job description: ${jobDescription}.\n\nGo through the job description and write a job application email withing 10 lines. Please hightlight my skills in bold, do not forget to add regards along wwith my email and mobile number (not in same line) and please do not use placeholders [] for replaceable value.`;
+    const prompt = `Resume:\n${resumeText}\nJob description: ${jobDescription}.\n\nGo through my resume and the job description and write a job application email for the above Job description withing 10 lines. Please hightlight my skills in bold, do not forget to add regards along with my email, mobile number, mobile number, Linkedin id and portfolio link. Keep the following points in mind:
+    1) Please do not use placeholders [] for replaceable value.
+    2) Do not keep line gaps between regards, name, email, mobile number, Linkedin id and portfolio link.
+    3) Do not add Subject.
+    4) Do not forget to add portfolio and Linkedin link if it is present in the resume.
+    5) Give the response in HTML format with propper formatting.`;
+    //const prompt = `Job description: ${jobDescription}.\n\nGo through the job description and write a job application email withing 10 lines. Please hightlight my skills in bold, do not forget to add regards along wwith my email and mobile number (not in same line) and please do not use placeholders [] for replaceable value.`;
     const result = await GeminiChatSession.sendMessage(prompt);
     const generatedEmail = result.response.text();
-    console.log("Generated mail : ", generatedEmail);
     setGeneratedEmails((prevEmails) => [...prevEmails, generatedEmail]);
   };
 
@@ -108,9 +104,6 @@ function PopupBody() {
     if (!window.confirm(`Send email to ${email}?`)) {
       return;
     }
-
-    console.log("email id: ", email);
-    console.log("email body: ", body);
 
     chrome.runtime.sendMessage(
       {

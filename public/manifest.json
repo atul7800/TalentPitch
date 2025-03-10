@@ -19,7 +19,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "workers/pdf.worker.min.mjs"
+        "workers/pdf.worker.js"
       ],
       "matches": [
         "<all_urls>"
