@@ -6,11 +6,11 @@ import {faPaperclip, faCircleXmark} from "@fortawesome/free-solid-svg-icons";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
 
 //for local
-//pdfjsLib.GlobalWorkerOptions.workerSrc = "/workers/pdf.worker.js";
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/workers/pdf.worker.js";
 //for chrome extension
-pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(
-  "workers/pdf.worker.js"
-);
+// pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL(
+//   "workers/pdf.worker.js"
+// );
 
 const StyledTextArea = styled("textarea")({
   resize: "none",
@@ -88,15 +88,29 @@ function PopupBody() {
       resumeText = await extractTextFromPDF(resumeFile);
     }
 
-    const prompt = `Resume:\n${resumeText}\nJob description: ${jobDescription}.\n\nGo through my resume and the job description and write a job application email for the above Job description withing 10 lines. Please hightlight my skills in bold, do not forget to add regards along with my email, mobile number, mobile number, Linkedin id and portfolio link. Keep the following points in mind:
+    const prompt = `Resume:\n${resumeText}\nJob description: ${jobDescription}.\n\nGo through my resume and the job description and write a job application email for the above Job description withing 15 lines. Do not forget to add regards along with my email, mobile number, mobile number, Linkedin id and portfolio link. Keep the following points in mind:
     1) Please do not use placeholders [] for replaceable value.
     2) Do not keep line gaps between regards, name, email, mobile number, Linkedin id and portfolio link.
     3) Do not add Subject.
     4) Do not forget to add portfolio and Linkedin link if it is present in the resume.
-    5) Give the response in HTML format with propper formatting.`;
+    5) Give the response in HTML format with propper formatting.
+    6) Skill should be in bold tag.
+    7) Give the response in raw html format only, not in markdown format.
+    8) Links should be clickable.
+    9) No extra line gaps in the "Regards" section. Regards section should be in a single <p> tga. For line break use <br> instead.`;
     //const prompt = `Job description: ${jobDescription}.\n\nGo through the job description and write a job application email withing 10 lines. Please hightlight my skills in bold, do not forget to add regards along wwith my email and mobile number (not in same line) and please do not use placeholders [] for replaceable value.`;
     const result = await GeminiChatSession.sendMessage(prompt);
-    const generatedEmail = result.response.text();
+    let generatedEmail = result.response.text();
+
+    // ✅ Remove Markdown code block markers (```html ... ```)
+    generatedEmail = generatedEmail
+      .replace(/```html\s*([\s\S]*?)```/g, "$1")
+      .trim();
+    generatedEmail = generatedEmail.replace(/```([\s\S]*?)```/g, "$1").trim();
+
+    // ✅ Convert Markdown bold (`**bold**`) to HTML bold (`<b>bold</b>`)
+    generatedEmail = generatedEmail.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+
     setGeneratedEmails((prevEmails) => [...prevEmails, generatedEmail]);
   };
 

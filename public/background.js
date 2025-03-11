@@ -20,10 +20,12 @@ async function sendEmail(to, subject, body) {
   const token = await getAuthToken();
 
   const emailContent =
+    `MIME-Version: 1.0\r\n` +
     `To: ${to}\r\n` +
     `Subject: ${subject}\r\n` +
-    `Content-Type: text/plain; charset="UTF-8"\r\n\r\n` +
-    `${body}`;
+    `Content-Type: text/html; charset="UTF-8"\r\n` +
+    `Content-Transfer-Encoding: 7bit\r\n\r\n` +
+    body;
 
   const encodedMessage = btoa(emailContent)
     .replace(/\+/g, "-")
