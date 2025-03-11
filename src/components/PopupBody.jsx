@@ -28,6 +28,7 @@ function PopupBody() {
   const [jobDescription, setJobDescription] = useState("");
   const [recruitersEmail, setRecruitersEmail] = useState("");
   const [generatedEmails, setGeneratedEmails] = useState([]);
+  const [mailSubject, setMailSubject] = useState("");
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeName, setResumeName] = useState("");
   const [buttonName, setButtonName] = useState(
@@ -111,10 +112,14 @@ function PopupBody() {
     // ✅ Convert Markdown bold (`**bold**`) to HTML bold (`<b>bold</b>`)
     generatedEmail = generatedEmail.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
 
+    const mailSubjectPROMPT = `Resume:\n${resumeText}\nJob description: ${jobDescription}.\n\nGo through my resume and the job description and write Subject for the job application email.`;
+    const mailSubject = await GeminiChatSession.sendMessage(mailSubjectPROMPT);
+    setMailSubject(mailSubject);
+
     setGeneratedEmails((prevEmails) => [...prevEmails, generatedEmail]);
   };
 
-  const sendEmail = (email, body) => {
+  const sendEmail = (email, subject, body) => {
     if (!window.confirm(`Send email to ${email}?`)) {
       return;
     }
@@ -123,7 +128,7 @@ function PopupBody() {
       {
         action: "sendEmail",
         to: email,
-        subject: "Job Application Mail",
+        subject: subject,
         body: body,
       },
       (response) => {
@@ -251,7 +256,7 @@ function PopupBody() {
 
         <button
           onClick={() =>
-            sendEmail("practiceandothers@gmail.com", generatedEmails[0])
+            sendEmail(recruitersEmail, mailSubject, generatedEmails[0])
           }
           style={{
             width: "100%",
