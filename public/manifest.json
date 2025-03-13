@@ -4,12 +4,15 @@
   "version": "1.0",
   "description": "Generate and send job application emails with ease.",
   "permissions": [
+    "scripting",
+    "activeTab",
     "storage",
     "identity",
     "identity.email"
   ],
   "host_permissions": [
-    "https://mail.google.com/"
+    "https://mail.google.com/",
+    "https://www.linkedin.com/*"
   ],
   "externally_connectable": {
     "matches": [
@@ -32,6 +35,12 @@
       "https://www.googleapis.com/auth/gmail.send"
     ]
   },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["content.js"]
+    }
+  ],
   "action": {
     "default_popup": "index.html"
   },

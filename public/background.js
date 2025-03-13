@@ -50,6 +50,8 @@ async function sendEmail(to, subject, body) {
   }
 }
 
+let contentScriptLoaded = false;
+
 // Listen for messages from the popup UI
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "sendEmail") {
@@ -57,5 +59,72 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then(() => sendResponse({success: true}))
       .catch((error) => sendResponse({success: false, error}));
   }
+
+  let contentScriptLoaded = false;
+  if (request.action === "contentScriptLoaded") {
+      contentScriptLoaded = true;
+      console.log("✅ Content Script is Running");
+  }
+
+  if (request.action === "startScraping") {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs.length === 0) {
+              console.error("🔴 No active tab found!");
+              sendResponse({ status: "error" });
+              return;
+          }
+
+          let activeTab = tabs[0];
+
+          if (!activeTab.url.includes("linkedin.com")) {
+              console.error("🔴 Not a LinkedIn page! Cannot inject content script.");
+              sendResponse({ status: "error" });
+              return;
+          }
+
+          if (!contentScriptLoaded) {
+              console.log("🔹 Injecting content.js because it's not yet loaded...");
+
+              // ✅ Inject content.js
+              chrome.scripting.executeScript({
+                  target: { tabId: activeTab.id },
+                  files: ["content.js"]
+              }, () => {
+                  console.log("✅ Scraper injected into LinkedIn.");
+                  contentScriptLoaded = true;
+
+                  // ✅ Wait before sending message
+                  setTimeout(() => {
+                      chrome.tabs.sendMessage(activeTab.id, {
+                          action: "scrapeLinkedInEmails",
+                          companyName: request.jobDescription
+                      }, (response) => {
+                          if (chrome.runtime.lastError) {
+                              console.error("🔴 Error sending message to content.js:", chrome.runtime.lastError);
+                              sendResponse({ status: "error" });
+                          } else {
+                              sendResponse({ status: "success" });
+                          }
+                      });
+                  }, 2000);
+              });
+          } else {
+              // ✅ If content.js is already injected, send the message immediately
+              chrome.tabs.sendMessage(activeTab.id, {
+                  action: "scrapeLinkedInEmails",
+                  companyName: request.jobDescription
+              }, (response) => {
+                  if (chrome.runtime.lastError) {
+                      console.error("🔴 Error sending message to content.js:", chrome.runtime.lastError);
+                      sendResponse({ status: "error" });
+                  } else {
+                      sendResponse({ status: "success" });
+                  }
+              });
+          }
+      });
+
+  }
+
   return true;
 });

@@ -43,6 +43,16 @@ function PopupBody() {
     }
   }, [resumeFile, generatedEmails]);
 
+  const handleScrape = () => {
+    chrome.runtime.sendMessage({ action: "startScraping", jobDescription }, (response) => {
+        if (response?.status === "success") {
+            alert("Scraping started on LinkedIn!");
+        } else {
+            alert("Failed to start scraping.");
+        }
+    });
+  };
+
   const extractTextFromPDF = async (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -249,7 +259,7 @@ function PopupBody() {
             color: "white",
             backgroundColor: "#33adff",
           }}
-          onClick={generateEmails}
+          onClick={handleScrape}
         >
           {buttonName}
         </button>
