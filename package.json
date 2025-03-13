@@ -14,7 +14,9 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@google/generative-ai": "^0.24.0",
     "axios": "^1.8.2",
+    "dotenv": "^16.4.7",
     "gapi-script": "^1.2.0",
+    "puppeteer": "^24.4.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "styled-components": "^6.1.15"
