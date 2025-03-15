@@ -44,13 +44,16 @@ function PopupBody() {
   }, [resumeFile, generatedEmails]);
 
   const handleScrape = () => {
-    chrome.runtime.sendMessage({ action: "startScraping", jobDescription }, (response) => {
+    chrome.runtime.sendMessage(
+      {action: "startScraping", jobDescription},
+      (response) => {
         if (response?.status === "success") {
-            alert("Scraping started on LinkedIn!");
+          alert("Scraping started on LinkedIn!");
         } else {
-            alert("Failed to start scraping.");
+          alert("Failed to start scraping.");
         }
-    });
+      }
+    );
   };
 
   const extractTextFromPDF = async (file) => {
@@ -113,13 +116,13 @@ function PopupBody() {
     const result = await GeminiChatSession.sendMessage(prompt);
     let generatedEmail = result.response.text();
 
-    // ✅ Remove Markdown code block markers (```html ... ```)
+    // Remove Markdown code block markers (```html ... ```)
     generatedEmail = generatedEmail
       .replace(/```html\s*([\s\S]*?)```/g, "$1")
       .trim();
     generatedEmail = generatedEmail.replace(/```([\s\S]*?)```/g, "$1").trim();
 
-    // ✅ Convert Markdown bold (`**bold**`) to HTML bold (`<b>bold</b>`)
+    // Convert Markdown bold (`**bold**`) to HTML bold (`<b>bold</b>`)
     generatedEmail = generatedEmail.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
 
     const mailSubjectPROMPT = `Resume:\n${resumeText}\nJob description: ${jobDescription}.\n\nGo through my resume and the job description and write Subject for the job application email.`;
