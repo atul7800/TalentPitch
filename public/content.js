@@ -140,7 +140,7 @@ function goToPeopleSection() {
     console.log("Navigated to People Section");
 
     setTimeout(() => {
-      extractEmails();
+      extractLinkedInProfiles();
     }, 5000);
   } else {
     console.error("🔴 'People' tab not found!");
@@ -149,13 +149,29 @@ function goToPeopleSection() {
 }
 
 // Extract Emails from "People" Section
-function extractEmails() {
+function extractLinkedInProfiles() {
   console.log("🔍 Extracting employee emails...");
 
-  let employees = [];
-  let employeeCards = document.querySelectorAll(
-    ".org-people-profile-card__content"
+  let extractedProfiles = [];
+  let profiles = document.querySelectorAll(
+    ".org-people-profile-card__profile-card-spacing"
   );
 
-  console.log("employeeCards People Data : ", employeeCards);
+  profiles.forEach((profile) => {
+    let profileLink = profile.querySelector("a[href*='/in/']")?.href;
+    let nameElement = profile
+      .querySelector(".artdeco-entity-lockup__title a div")
+      ?.innerText.trim();
+    let jobTitleElement = profile
+      .querySelector(".artdeco-entity-lockup__subtitle div")
+      ?.innerText.trim();
+    let imageElement = profile.querySelector(
+      ".artdeco-entity-lockup__image img"
+    )?.src;
+
+    if (profileLink && nameElement && jobTitleElement && imageElement) {
+      extractedProfiles.push({profileLink});
+    }
+  });
+  console.log("extractedProfiles : ", extractedProfiles);
 }
