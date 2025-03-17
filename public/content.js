@@ -1,7 +1,7 @@
 console.log("🔍 LinkedIn Scraper Loaded!");
 
-// Prevent multiple search triggers
-let isSearching = false;
+let isSearching = false; // Prevent multiple search triggers
+let extractedProfiles = [];
 
 // Notify `background.js` that `content.js` is running
 chrome.runtime.sendMessage({action: "contentScriptLoaded"});
@@ -148,11 +148,10 @@ function goToPeopleSection() {
   }
 }
 
-// Extract Emails from "People" Section
+// Extract valid profiles
 function extractLinkedInProfiles() {
-  console.log("🔍 Extracting employee emails...");
+  console.log("🔍 Extracting employee details...");
 
-  let extractedProfiles = [];
   let profiles = document.querySelectorAll(
     ".org-people-profile-card__profile-card-spacing"
   );
@@ -167,11 +166,47 @@ function extractLinkedInProfiles() {
       ?.innerText.trim();
     let imageElement = profile.querySelector(
       ".artdeco-entity-lockup__image img"
-    )?.src;
+    )?.src.includes("/dms/");
 
     if (profileLink && nameElement && jobTitleElement && imageElement) {
-      extractedProfiles.push({profileLink});
+      extractedProfiles.push({
+        nameElement,
+        profileLink
+    });
     }
+
+   
   });
-  console.log("extractedProfiles : ", extractedProfiles);
+  iterateOverProfiles();
+}
+
+// Iterate over the valid profiles to extract emails
+function iterateOverProfiles() {
+    // extractedProfiles.forEach((profile) => {
+    //     console.log("Scrapper itterating over profile : ", profile)
+    //     //extractEmail(extractedProfiles.profileLink);
+    // })
+    const firstProfileKey = Object.keys(extractedProfiles)[0];
+    const firstProfile = extractedProfiles[firstProfileKey]
+    //console.log("Scrapper employeeProfileLink : ", firstProfile)
+    extractEmail(firstProfile.profileLink)
+}
+
+// Extract Emails from a Persion's profile 
+function extractEmail(employeeProfileLink) {
+    console.log("🔍Extracting employee email...");
+    console.log("Scrapper employeeProfileLink : ", employeeProfileLink)
+
+    window.location.href = employeeProfileLink;
+    
+    let contactElement = document.querySelector("top-card-text-details-contact-info");
+    console.log("Scrapper contactElement : ", contactElement);
+
+    contactElement.click();
+
+    // const closeButton = document.querySelector("artdeco-modal artdeco-modal--layer-default button[aria-label = 'Dismiss']")
+
+    // setTimeout(() => {
+    //     closeButton.click()
+    // }, 2000)
 }
