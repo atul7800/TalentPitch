@@ -158,55 +158,71 @@ function extractLinkedInProfiles() {
 
   profiles.forEach((profile) => {
     let profileLink = profile.querySelector("a[href*='/in/']")?.href;
-    let nameElement = profile
+    let name = profile
       .querySelector(".artdeco-entity-lockup__title a div")
       ?.innerText.trim();
-    let jobTitleElement = profile
+    let job = profile
       .querySelector(".artdeco-entity-lockup__subtitle div")
       ?.innerText.trim();
-    let imageElement = profile.querySelector(
-      ".artdeco-entity-lockup__image img"
-    )?.src.includes("/dms/");
+    let imageElement = profile
+      .querySelector(".artdeco-entity-lockup__image img")
+      ?.src.includes("/dms/");
 
-    if (profileLink && nameElement && jobTitleElement && imageElement) {
-      extractedProfiles.push({
-        nameElement,
-        profileLink
-    });
+    if (profileLink && name && job && imageElement) {
+      extractedProfiles.push(
+        profile.querySelector(".artdeco-entity-lockup__title a")
+      );
     }
-
-   
   });
+
   iterateOverProfiles();
+  console.log("end of extractLinkedInProfiles");
 }
 
 // Iterate over the valid profiles to extract emails
 function iterateOverProfiles() {
-    // extractedProfiles.forEach((profile) => {
-    //     console.log("Scrapper itterating over profile : ", profile)
-    //     //extractEmail(extractedProfiles.profileLink);
-    // })
-    const firstProfileKey = Object.keys(extractedProfiles)[0];
-    const firstProfile = extractedProfiles[firstProfileKey]
-    //console.log("Scrapper employeeProfileLink : ", firstProfile)
-    extractEmail(firstProfile.profileLink)
+  extractedProfiles[0].click();
+  console.log("before callinge extracEmail");
+  extractEmail();
+  console.log("iterateOverProfiles is over");
+
+  // extractedProfiles.forEach((profile) => {
+  //   console.log("Scrapper itterating over profile : ", profile);
+  //   profile.click();
+  //   //extractEmail(extractedProfiles.profileLink);
+  // });
+  // const firstProfileKey = Object.keys(extractedProfiles)[0];
+  // const firstProfile = extractedProfiles[firstProfileKey];
+  // console.log("Scrapper employeeProfileLink : ", firstProfile.profileLink);
+  // extractEmail(firstProfile.profileLink);
 }
 
-// Extract Emails from a Persion's profile 
-function extractEmail(employeeProfileLink) {
-    console.log("🔍Extracting employee email...");
-    console.log("Scrapper employeeProfileLink : ", employeeProfileLink)
-
-    window.location.href = employeeProfileLink;
-    
-    let contactElement = document.querySelector("top-card-text-details-contact-info");
+// Extract Emails from a Persion's profile
+function extractEmail() {
+  console.log("🔍Opening employee profile...");
+  let contactElement = "";
+  setTimeout(() => {
+    contactElement = document.querySelector(
+      'a[href*="/overlay/contact-info/"]'
+    );
     console.log("Scrapper contactElement : ", contactElement);
-
     contactElement.click();
+  }, 2000);
 
-    // const closeButton = document.querySelector("artdeco-modal artdeco-modal--layer-default button[aria-label = 'Dismiss']")
+  setTimeout(() => {
+    const closeButton = document.querySelector(
+      "div[data-test-modal-container] div[data-test-modal] button[aria-label='Dismiss']"
+    );
 
-    // setTimeout(() => {
-    //     closeButton.click()
-    // }, 2000)
+    if (closeButton) {
+      console.log("Scrapper dismiss btn inner : ", closeButton.innerHTML);
+      closeButton.click();
+    } else {
+      console.log("Scrapper dismiss btn not found");
+    }
+  }, 2000);
+
+  // setTimeout(() => {
+  //     closeButton.click()
+  // }, 2000)
 }
