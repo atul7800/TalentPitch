@@ -10,7 +10,6 @@ chrome.runtime.sendMessage({action: "contentScriptLoaded"});
 chrome.runtime.onMessage.addListener((request) => {
   if (request.action === "scrapeLinkedInEmails" && !isSearching) {
     isSearching = true; // Prevent duplicate search execution
-    console.log("Received scrape request:", request.companyName);
     scrapeLinkedInEmails(request.companyName);
   }
 });
@@ -19,19 +18,16 @@ chrome.runtime.onMessage.addListener((request) => {
 let lastUrl = location.href;
 new MutationObserver(() => {
   if (location.href !== lastUrl) {
-    console.log("🔄 LinkedIn page changed! Re-attaching content script...");
     lastUrl = location.href;
     isSearching = false; // Reset search flag on navigation
+    observer.disconnect(); // disconnecting observer
     chrome.runtime.sendMessage({action: "contentScriptLoaded"}); // Notify background.js
   }
 }).observe(document, {subtree: true, childList: true});
 
 function scrapeLinkedInEmails(companyName) {
-  console.log(`🔍 Searching for company: ${companyName}`);
-
   let searchBox = document.querySelector('input[aria-label="Search"]');
   if (!searchBox) {
-    console.error("🔴 LinkedIn search bar not found!");
     alert("LinkedIn search bar not found!");
     return;
   }
@@ -48,8 +44,6 @@ function scrapeLinkedInEmails(companyName) {
   });
   searchBox.dispatchEvent(enterKeyEvent);
 
-  console.log("Search triggered for:", companyName);
-
   setTimeout(() => {
     applyCompaniesFilter(); // Re-enable this line to proceed after search
   }, 3000);
@@ -57,8 +51,6 @@ function scrapeLinkedInEmails(companyName) {
 
 // Apply the "Companies" Filter
 function applyCompaniesFilter() {
-  console.log("🔎 Searching for the 'Companies' filter...");
-
   let filters = document.querySelectorAll(
     ".search-reusables__filter-pill-button"
   );
@@ -68,13 +60,11 @@ function applyCompaniesFilter() {
   );
 
   if (!companiesFilter) {
-    console.error("🔴 'Companies' filter not found!");
     alert("Companies filter not found!");
     return;
   }
 
   companiesFilter.click();
-  console.log("'Companies' Filter Applied.");
 
   setTimeout(() => {
     openCompanyPage();
@@ -83,30 +73,24 @@ function applyCompaniesFilter() {
 
 // Open the First Company Result
 function openCompanyPage() {
-  console.log("🔎 Looking for the first company result...");
-
   // New Selector for Company Results
   let companyLinks = document.querySelectorAll(
     "div.WDysKnKwntWqWKjqDIQwMiddxTJWLEMUE a[data-test-app-aware-link]"
   );
 
   if (companyLinks.length > 0) {
-    console.log("Found company results, clicking the first one...");
     companyLinks[0].click();
 
     setTimeout(() => {
       goToPeopleSection();
     }, 5000);
   } else {
-    console.error("No company results found! Trying alternate method...");
-
     // Alternate method if the first method fails
     let alternativeCompanyLinks = document.querySelectorAll(
       "a[href*='/company/']"
     );
     if (alternativeCompanyLinks.length > 0) {
       alternativeCompanyLinks[0].click();
-      console.log("Opened company page using alternate method");
 
       setTimeout(() => {
         goToPeopleSection();
@@ -121,8 +105,6 @@ function openCompanyPage() {
 
 // Navigate to "People" Section
 function goToPeopleSection() {
-  console.log("🔎 Navigating to People section...");
-
   const peopleTabParentTag = document.querySelector(
     'nav[aria-label="Organization’s page navigation"]'
   );
@@ -135,78 +117,92 @@ function goToPeopleSection() {
   });
 
   if (peopleTab) {
-    console.log("People tab found");
     peopleTab.click();
-    console.log("Navigated to People Section");
 
     setTimeout(() => {
       extractLinkedInProfiles();
     }, 5000);
   } else {
-    console.error("🔴 'People' tab not found!");
     alert("'People' tab not found!");
   }
 }
 
 // Extract valid profiles
 function extractLinkedInProfiles() {
-  console.log("🔍 Extracting employee details...");
-
   let profiles = document.querySelectorAll(
     ".org-people-profile-card__profile-card-spacing"
   );
 
   profiles.forEach((profile) => {
-    let profileLink = profile.querySelector("a[href*='/in/']")?.href;
+    const rawURL = profile.querySelector("a[href*='/in/']")?.href;
+    console.log("Atul rawURL : ", rawURL);
+    const parsedURL = new URL(rawURL);
+    console.log("Atul parsedURL : ", parsedURL);
+    let profileLink = parsedURL.origin + parsedURL.pathname;
+    console.log("Atul profileLink : ", profileLink);
     let nameElement = profile
       .querySelector(".artdeco-entity-lockup__title a div")
       ?.innerText.trim();
     let jobTitleElement = profile
       .querySelector(".artdeco-entity-lockup__subtitle div")
       ?.innerText.trim();
-    let imageElement = profile.querySelector(
-      ".artdeco-entity-lockup__image img"
-    )?.src.includes("/dms/");
+    let imageElement = profile
+      .querySelector(".artdeco-entity-lockup__image img")
+      ?.src.includes("/dms/");
 
     if (profileLink && nameElement && jobTitleElement && imageElement) {
       extractedProfiles.push({
         nameElement,
-        profileLink
-    });
+        profileLink,
+      });
     }
-
-   
   });
+  console.warn("Atul DATA : ", extractedProfiles);
   iterateOverProfiles();
 }
 
 // Iterate over the valid profiles to extract emails
 function iterateOverProfiles() {
-    // extractedProfiles.forEach((profile) => {
-    //     console.log("Scrapper itterating over profile : ", profile)
-    //     //extractEmail(extractedProfiles.profileLink);
-    // })
-    const firstProfileKey = Object.keys(extractedProfiles)[0];
-    const firstProfile = extractedProfiles[firstProfileKey]
-    //console.log("Scrapper employeeProfileLink : ", firstProfile)
-    extractEmail(firstProfile.profileLink)
+  // extractedProfiles.forEach((profile) => {
+  //     console.log("Scrapper itterating over profile : ", profile)
+  //     //extractEmail(extractedProfiles.profileLink);
+  // })
+  const firstProfileKey = Object.keys(extractedProfiles)[0];
+  const firstProfile = extractedProfiles[firstProfileKey];
+  console.warn("Atul first profile link : ", firstProfile.profileLink);
+  chrome.storage.local.set({openThisProfile: firstProfile.profileLink}, () => {
+    console.warn("Atul first profile link : ", firstProfile.profileLink);
+    //window.location.href = firstProfile.profileLink;
+  });
 }
 
-// Extract Emails from a Persion's profile 
-function extractEmail(employeeProfileLink) {
-    console.log("🔍Extracting employee email...");
-    console.log("Scrapper employeeProfileLink : ", employeeProfileLink)
+// chrome.storage.local.get("openThisProfile", (data) => {
+//   console.log("Atul openThisProfile : ", data);
+//   if (
+//     data.openThisProfile &&
+//     window.location.href.includes(data.openThisProfile)
+//   ) {
+//     console.log("Atul calling extractEmail");
+//     chrome.storage.local.remove("openThisProfile", () => {
+//       // Clear BEFORE calling extractEmail()
+//       extractEmail(); // Now safe to run
+//     });
+//   }
+// });
 
-    window.location.href = employeeProfileLink;
-    
-    let contactElement = document.querySelector("top-card-text-details-contact-info");
-    console.log("Scrapper contactElement : ", contactElement);
+// Extract Emails from a Persion's profile
+function extractEmail() {
+  let contactElement = document.querySelector(
+    "top-card-text-details-contact-info"
+  );
+  console.log("Scrapper contactElement : ", contactElement);
+  alert("Hi");
 
-    contactElement.click();
+  //contactElement.click();
 
-    // const closeButton = document.querySelector("artdeco-modal artdeco-modal--layer-default button[aria-label = 'Dismiss']")
+  // const closeButton = document.querySelector("artdeco-modal artdeco-modal--layer-default button[aria-label = 'Dismiss']")
 
-    // setTimeout(() => {
-    //     closeButton.click()
-    // }, 2000)
+  // setTimeout(() => {
+  //     closeButton.click()
+  // }, 2000)
 }
