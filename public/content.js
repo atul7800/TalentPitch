@@ -134,12 +134,16 @@ function extractLinkedInProfiles() {
   );
 
   profiles.forEach((profile) => {
+    let profileLink = "";
     const rawURL = profile.querySelector("a[href*='/in/']")?.href;
     console.log("Atul rawURL : ", rawURL);
-    const parsedURL = new URL(rawURL);
-    console.log("Atul parsedURL : ", parsedURL);
-    let profileLink = parsedURL.origin + parsedURL.pathname;
-    console.log("Atul profileLink : ", profileLink);
+    if (rawURL) {
+      const parsedURL = new URL(rawURL);
+      console.log("Atul parsedURL : ", parsedURL);
+      profileLink = parsedURL.origin + parsedURL.pathname;
+      console.log("Atul profileLink : ", profileLink);
+    }
+
     let nameElement = profile
       .querySelector(".artdeco-entity-lockup__title a div")
       ?.innerText.trim();
@@ -172,37 +176,48 @@ function iterateOverProfiles() {
   console.warn("Atul first profile link : ", firstProfile.profileLink);
   chrome.storage.local.set({openThisProfile: firstProfile.profileLink}, () => {
     console.warn("Atul first profile link : ", firstProfile.profileLink);
-    //window.location.href = firstProfile.profileLink;
+    window.location.href = firstProfile.profileLink;
   });
 }
 
-// chrome.storage.local.get("openThisProfile", (data) => {
-//   console.log("Atul openThisProfile : ", data);
-//   if (
-//     data.openThisProfile &&
-//     window.location.href.includes(data.openThisProfile)
-//   ) {
-//     console.log("Atul calling extractEmail");
-//     chrome.storage.local.remove("openThisProfile", () => {
-//       // Clear BEFORE calling extractEmail()
-//       extractEmail(); // Now safe to run
-//     });
-//   }
-// });
+chrome.storage.local.get("openThisProfile", (data) => {
+  console.log("Atul openThisProfile : ", data);
+  if (
+    data.openThisProfile &&
+    window.location.href.includes(data.openThisProfile)
+  ) {
+    console.log("Atul calling extractEmail");
+    chrome.storage.local.remove("openThisProfile", () => {
+      // Clear BEFORE calling extractEmail()
+      extractEmail(); // Now safe to run
+    });
+  }
+});
 
 // Extract Emails from a Persion's profile
 function extractEmail() {
-  let contactElement = document.querySelector(
-    "top-card-text-details-contact-info"
-  );
-  console.log("Scrapper contactElement : ", contactElement);
-  alert("Hi");
+  let contactElement = "";
 
-  //contactElement.click();
+  setTimeout(() => {
+    contactElement = document.querySelector(
+      "#top-card-text-details-contact-info"
+    );
+    console.log("Scrapper contactElement : ", contactElement);
+    contactElement.click();
+  }, 2000);
 
-  // const closeButton = document.querySelector("artdeco-modal artdeco-modal--layer-default button[aria-label = 'Dismiss']")
+  let email = "";
 
-  // setTimeout(() => {
-  //     closeButton.click()
-  // }, 2000)
+  setTimeout(() => {
+    email = document.querySelector(
+      ".pv-contact-info__contact-type a[href^='mailto:']"
+    )?.innerText;
+    console.log("Atul email inside : ", email);
+
+    const closeButton = document.querySelector(
+      ".artdeco-modal button[aria-label = 'Dismiss']"
+    );
+    console.log("Atul close button : ", closeButton);
+    closeButton.click();
+  }, 5000);
 }
